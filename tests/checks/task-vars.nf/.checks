@@ -4,7 +4,8 @@ set -e
 # run normal mode
 #
 echo ''
-$NXF_RUN | tee stdout
+export NXF_TRACE='nextflow'
+$NXF_RUN -dump-hashes | tee stdout
 
 [[ `grep 'INFO' .nextflow.log | grep -c 'Submitted process > printVars'` == 3 ]] || false
 
@@ -23,7 +24,7 @@ $NXF_RUN | tee stdout
 # RESUME mode
 #
 echo ''
-$NXF_RUN -resume | tee stdout
+$NXF_RUN -dump-hashes -resume | tee stdout
 
 [[ `grep 'INFO' .nextflow.log | grep -c 'Cached process > printVars'` == 3 ]] || false
 
