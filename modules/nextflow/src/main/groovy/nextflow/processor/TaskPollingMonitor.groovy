@@ -17,6 +17,8 @@
 
 package nextflow.processor
 
+import nextflow.exception.ProcessTimeoutException
+
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -604,13 +606,17 @@ class TaskPollingMonitor implements TaskMonitor {
         }
 
         // check if it is terminated
-        if( handler.checkIfCompleted() ) {
-            log.debug "Task completed > $handler"
+        def timeout=false
+        if( handler.checkIfCompleted() || (timeout=handler.checkIfTimedOut()) ) {
+            log.debug "Task ${timeout ? 'timed-out' : 'completed'} > $handler"
             // decrement forks count
             handler.decProcessForks()
 
             // since completed *remove* the task from the processing queue
             evict(handler)
+
+            if( timeout )
+                handler.task.error = new ProcessTimeoutException("Task could not complete within the required time")
 
             // finalize the tasks execution
             final fault = handler.task.processor.finalizeTask(handler.task)

@@ -29,7 +29,6 @@ import nextflow.util.CacheHelper
  *
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-@EqualsAndHashCode
 @CompileStatic
 @Immutable
 class SecretImpl implements Secret, CacheFunnel {

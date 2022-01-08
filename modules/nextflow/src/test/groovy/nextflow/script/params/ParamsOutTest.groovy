@@ -178,7 +178,7 @@ class ParamsOutTest extends Specification {
               file x
               file 'y' mode flatten
               file p into q mode standard
-
+              file x.id   
               return ''
             }
             '''
@@ -190,12 +190,14 @@ class ParamsOutTest extends Specification {
         def out1 = process.config.getOutputs().get(0)
         def out2 = process.config.getOutputs().get(1)
         def out3 = process.config.getOutputs().get(2)
+        def out4 = process.config.getOutputs().get(3)
+
 
         // it MUST
         // - create a value out parameter named 'x'
         // - create in the script context (binding) a new variable of type DataflowQueue named 'x'
         then:
-        process.config.getOutputs().size() == 3
+        process.config.getOutputs().size() == 4
 
         out1.class == FileOutParam
         out1.name == 'x'

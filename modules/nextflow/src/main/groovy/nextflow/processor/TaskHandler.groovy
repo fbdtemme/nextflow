@@ -17,6 +17,8 @@
 
 package nextflow.processor
 
+import nextflow.exception.ProcessTimeoutException
+
 import static nextflow.processor.TaskStatus.*
 
 import java.nio.file.NoSuchFileException
@@ -233,5 +235,15 @@ abstract class TaskHandler {
         task.processor.forksCount?.decrement()
     }
 
-
+    boolean checkIfTimedOut () {
+        final timeout = task.config.getTime()
+        if( !timeout )
+            return false
+        final now = System.currentTimeMillis()
+        if( isRunning() && now-startTimeMillis>timeout.millis )
+            return true
+        if( isSubmitted() && now-submitTimeMillis>timeout.millis )
+            return true
+        return false
+    }
 }

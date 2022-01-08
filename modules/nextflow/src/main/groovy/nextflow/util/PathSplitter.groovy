@@ -28,7 +28,6 @@ import groovy.transform.EqualsAndHashCode
  * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
 @Canonical
-@EqualsAndHashCode
 @CompileStatic
 class PathSplitter {
     String head

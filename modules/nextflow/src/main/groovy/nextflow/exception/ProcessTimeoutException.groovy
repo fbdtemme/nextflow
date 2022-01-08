@@ -1,5 +1,4 @@
 /*
- * Copyright 2020-2021, Seqera Labs
  * Copyright 2013-2019, Centre for Genomic Regulation (CRG)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +14,16 @@
  * limitations under the License.
  */
 
-package misc
-import nextflow.Session
+package nextflow.exception
+
+import groovy.transform.InheritConstructors
+
 /**
+ * Exception thrown when a task does not complete within
+ * the `time` requested time requirement
  *
- *  @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
+ * @author Paolo Di Tommaso <paolo.ditommaso@gmail.com>
  */
-
-def session = new Session()
-session.env [ 'HELLO' ]  = '1'
-
-session.createProcessor().echo(true).script{ "env | sort" }.run()
-
-session.terminate()
-
-
+@InheritConstructors
+class ProcessTimeoutException extends ProcessException {
+}
