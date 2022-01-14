@@ -371,6 +371,8 @@ class AzFileSystem extends FileSystem {
             int count=0
             while( values.hasNext() ) {
                 BlobItem blob = values.next()
+
+                log.debug "GuessPath: Name: ${blob.getName()}"
                 if( blob.name == name )
                     exists = true
                 else if( blob.name.startsWith(name) && blob.name.charAt(name.length())==SLASH ) {
@@ -409,7 +411,6 @@ class AzFileSystem extends FileSystem {
     @PackageScope
     void copy(AzPath source, AzPath target) {
         log.debug "Azure Blob storage copy operation src=${source.toString()} -> dst=${target.toString()}}"
-        log.debug "Azure Blob is target a directory: ${target.isDirectory()}"
 
         SyncPoller<BlobCopyInfo, Void> pollResponse =
                 target.blobClient().beginCopy( source.blobClient().getBlobUrl(), null )
