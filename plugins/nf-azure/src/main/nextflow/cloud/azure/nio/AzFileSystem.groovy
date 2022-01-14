@@ -448,7 +448,6 @@ class AzFileSystem extends FileSystem {
             final result = guessPath(path)
             if( result.exists ) {
                 def name = path.blobName()
-                log.info "readBlobAttrs0 name: ${path.toString()}"
                 if( !name.endsWith('/') ) name += '/'
                 return new AzFileAttributes(path.containerClient(), name)
             }
