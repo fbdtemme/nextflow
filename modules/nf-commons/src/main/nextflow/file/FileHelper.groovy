@@ -937,7 +937,7 @@ class FileHelper {
                     provider.copy(source, target, options);
                 }
                 catch( Throwable e ) {
-                    log.info "Copy source as directory fallback after error: ${source.toString()}"
+                    source += '/'
                     CopyMoveHelper.copyDirectory(source, target, options)
                 }
             }
