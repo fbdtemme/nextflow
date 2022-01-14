@@ -165,7 +165,14 @@ class CopyMoveHelper {
                 Path newFile = delta != null ? target.resolve(delta) : target;
                 if( log.isTraceEnabled())
                     log.debug("Copy file: " + current + " -> "+newFile.toUri());
-                copyFile(current, newFile, foreign, options);
+
+                try {
+                    copyFile(current, newFile, foreign, options);
+                }
+                catch( Throwable e ) {
+                    Path dirSource = Path.of(source.toString(), "/");
+                    CopyMoveHelper.copyDirectory(dirSource, target, options);
+                }
                 return FileVisitResult.CONTINUE;
             }
 
