@@ -937,8 +937,8 @@ class FileHelper {
                     provider.copy(source, target, options);
                 }
                 catch( Throwable e ) {
-                    source += '/'
-                    CopyMoveHelper.copyDirectory(source, target, options)
+                    Path dirSource = Path.of(source.toString(), '/')
+                    CopyMoveHelper.copyDirectory(dirSource, target, options)
                 }
             }
         }
