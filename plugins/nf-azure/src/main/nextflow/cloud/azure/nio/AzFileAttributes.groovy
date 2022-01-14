@@ -58,6 +58,7 @@ class AzFileAttributes implements BasicFileAttributes {
         objectId = "/${client.containerName}/${client.blobName}"
         creationTime = time(props.getCreationTime())
         updateTime = time(props.getLastModified())
+        log.debug "${client.blobName}"
         directory = client.blobName.endsWith('/')
         size = props.getBlobSize()
     }
