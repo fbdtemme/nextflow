@@ -187,6 +187,9 @@ class PublishDir {
         createPublishDir()
         validatePublishMode()
 
+        for( Path value : files ) {
+            log.debug "File to publish: ${value.toString()}"
+        }
         /*
          * when the publishing is using links, create them in process
          * otherwise copy and moving file can take a lot of time, thus
@@ -285,6 +288,7 @@ class PublishDir {
             destination.setTags( resolveTags(this.tags) )
         }
 
+        log.debug "Publishing: ${source.toString()} -> ${destination.toString()}"
         if( inProcess ) {
             safeProcessFile(source, destination)
         }
@@ -328,7 +332,7 @@ class PublishDir {
 
         // create target dirs if required
         makeDirs(destination.parent)
-
+        log.debug "pocessFileImpl(${source.toString()}, ${destination.toString()}"
         try {
             processFileImpl(source, destination)
         }
@@ -401,7 +405,7 @@ class PublishDir {
 
     @CompileStatic
     protected void processFileImpl( Path source, Path destination ) {
-        log.trace "publishing file: $source -[$mode]-> $destination"
+        log.debug "publishing file: $source -[$mode]-> $destination"
 
         if( !mode || mode == Mode.SYMLINK ) {
             Files.createSymbolicLink(destination, source)

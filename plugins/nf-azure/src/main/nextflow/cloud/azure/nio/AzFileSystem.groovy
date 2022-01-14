@@ -408,6 +408,9 @@ class AzFileSystem extends FileSystem {
 
     @PackageScope
     void copy(AzPath source, AzPath target) {
+        log.debug "Azure Blob storage copy operation src=${source.toString()} -> dst=${target.toString()}}"
+        log.debug "Azure Blob is target a directory: ${target.isDirectory()}"
+
         SyncPoller<BlobCopyInfo, Void> pollResponse =
                 target.blobClient().beginCopy( source.blobClient().getBlobUrl(), null )
         pollResponse.waitForCompletion(Duration.ofSeconds(maxCopyDurationSecs))
