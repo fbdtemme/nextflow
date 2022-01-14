@@ -436,12 +436,12 @@ class AzFileSystem extends FileSystem {
 
     private AzFileAttributes readBlobAttrs0(AzPath path) {
         log.info "readBlobAttrs0: ${path.toString()}"
-        log.info "readBlobAttrs0 isDir: ${path.isDirectory()}"
 
         try {
-            return new AzFileAttributes(path.blobClient())
+            AzFileAttributes attr =  new AzFileAttributes(path.blobClient())
         }
         catch (BlobStorageException e) {
+            log.info e.toString()
             if( e.statusCode != 404 )
                 throw e
 

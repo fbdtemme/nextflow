@@ -163,13 +163,7 @@ class CopyMoveHelper {
                 String delta = rel != null ? rel.toString() : null;
                 Path newFile = delta != null ? target.resolve(delta) : target;
                 log.debug("Copy file: " + current + " -> "+newFile.toUri());
-
-                try {
-                    copyFile(current, newFile, foreign, options);
-                }
-                catch( Throwable e ) {
-                    CopyMoveHelper.copyDirectory(current, target, options);
-                }
+                copyFile(current, newFile, foreign, options);
                 return FileVisitResult.CONTINUE;
             }
 
