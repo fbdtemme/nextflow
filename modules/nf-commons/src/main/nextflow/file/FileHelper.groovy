@@ -933,7 +933,13 @@ class FileHelper {
             }
             else {
                 log.info "Copy source is file: ${source.toString()}"
-                provider.copy(source, target, options);
+                try {
+                    provider.copy(source, target, options);
+                }
+                catch( Throwable e ) {
+                    log.info "Copy source as directory fallback after error: ${source.toString()}"
+                    CopyMoveHelper.copyDirectory(source, target, options)
+                }
             }
         }
         else {

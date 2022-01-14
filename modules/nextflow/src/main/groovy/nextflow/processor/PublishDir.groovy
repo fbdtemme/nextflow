@@ -406,6 +406,7 @@ class PublishDir {
     @CompileStatic
     protected void processFileImpl( Path source, Path destination ) {
         log.debug "publishing file: $source -[$mode]-> $destination"
+        log.debug "publishing file isDir: ${source.isDirectory()}"
 
         if( !mode || mode == Mode.SYMLINK ) {
             Files.createSymbolicLink(destination, source)

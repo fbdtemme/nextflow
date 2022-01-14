@@ -436,6 +436,8 @@ class AzFileSystem extends FileSystem {
 
     private AzFileAttributes readBlobAttrs0(AzPath path) {
         log.info "readBlobAttrs0: ${path.toString()}"
+        log.info "readBlobAttrs0 isDir: ${path.isDirectory()}"
+
 //        try {
 //            return new AzFileAttributes(path.blobClient())
 //        }
