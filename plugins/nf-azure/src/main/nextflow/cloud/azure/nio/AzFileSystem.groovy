@@ -372,7 +372,6 @@ class AzFileSystem extends FileSystem {
             while( values.hasNext() ) {
                 BlobItem blob = values.next()
 
-                log.debug "GuessPath: Name: ${blob.getName()}"
                 if( blob.name == name )
                     exists = true
                 else if( blob.name.startsWith(name) && blob.name.charAt(name.length())==SLASH ) {
@@ -410,8 +409,6 @@ class AzFileSystem extends FileSystem {
 
     @PackageScope
     void copy(AzPath source, AzPath target) {
-        log.debug "Azure Blob storage copy operation src=${source.toString()} -> dst=${target.toString()}}"
-
         SyncPoller<BlobCopyInfo, Void> pollResponse =
                 target.blobClient().beginCopy( source.blobClient().getBlobUrl(), null )
         pollResponse.waitForCompletion(Duration.ofSeconds(maxCopyDurationSecs))
@@ -435,13 +432,10 @@ class AzFileSystem extends FileSystem {
     }
 
     private AzFileAttributes readBlobAttrs0(AzPath path) {
-        log.info "readBlobAttrs0: ${path.toString()}"
-
         try {
             AzFileAttributes attr =  new AzFileAttributes(path.blobClient())
         }
         catch (BlobStorageException e) {
-            log.info e.toString()
             if( e.statusCode != 404 )
                 throw e
 

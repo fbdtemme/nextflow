@@ -54,11 +54,7 @@ class AzFileAttributes implements BasicFileAttributes {
 
 
     AzFileAttributes(BlobClient client) {
-        log.info "AzFileAttributes enter"
-
         final props = client.getProperties()
-        log.info "AzFileAttributes BlobType: ${props.getBlobType().toString()}"
-
         objectId = "/${client.containerName}/${client.blobName}"
         creationTime = time(props.getCreationTime())
         updateTime = time(props.getLastModified())
