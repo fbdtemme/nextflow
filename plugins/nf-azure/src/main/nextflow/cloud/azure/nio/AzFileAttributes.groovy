@@ -65,11 +65,11 @@ class AzFileAttributes implements BasicFileAttributes {
         directory = client.blobName.endsWith('/')
         size = props.getBlobSize()
 
-        log.debug "AzFileAttributes objectId: ${this.objectId}"
-        log.debug "AzFileAttributes creationTime: ${this.creationTime}"
-        log.debug "AzFileAttributes updateTime: ${this.updateTime}"
-        log.debug "AzFileAttributes directory: ${this.directory}"
-        log.debug "AzFileAttributes size: ${this.size}"
+        // Check for empty blobs with hdi_isfolder metadata key
+        final meta = props.getMetadata()
+        if (meta.containsKey("hdi_isfolder") && props.getBlobSize() == 0) {
+            directory = meta.get("hdi_isfolder")
+        }
     }
 
     AzFileAttributes(String containerName, BlobItem item) {
