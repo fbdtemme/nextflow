@@ -928,11 +928,9 @@ class FileHelper {
             final linkOpts = options.contains(LinkOption.NOFOLLOW_LINKS) ? NO_FOLLOW_LINKS : FOLLOW_LINKS
             // same provider
             if( Files.isDirectory(source, linkOpts) ) {
-                log.info "Copy source is directory: ${source.toString()}"
                 CopyMoveHelper.copyDirectory(source, target, options)
             }
             else {
-                log.info "Copy source is file: ${source.toString()}"
                 try {
                     provider.copy(source, target, options);
                 }
