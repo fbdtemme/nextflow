@@ -15,6 +15,9 @@
  */
 package nextflow.cloud.azure.nio
 
+import com.azure.core.http.policy.HttpPipelinePolicy
+import org.codehaus.groovy.runtime.dgmimpl.arrays.IntegerArrayGetAtMetaMethod
+
 import java.nio.channels.Channels
 import java.nio.channels.SeekableByteChannel
 import java.nio.file.DirectoryNotEmptyException
@@ -409,8 +412,18 @@ class AzFileSystem extends FileSystem {
 
     @PackageScope
     void copy(AzPath source, AzPath target) {
+
+        final sasToken = provider.getSasToken()
+        String sourceUrl = source.blobClient().getBlobUrl()
+
+        if (sasToken != null) {
+            sourceUrl += "?${sasToken}"
+        }
+
+        log.info "AzFileSystem.copy ${sourceUrl} -> ${target.blobClient().getBlobUrl()}"
+
         SyncPoller<BlobCopyInfo, Void> pollResponse =
-                target.blobClient().beginCopy( source.blobClient().getBlobUrl(), null )
+                target.blobClient().beginCopy( sourceUrl, null )
         pollResponse.waitForCompletion(Duration.ofSeconds(maxCopyDurationSecs))
     }
 
