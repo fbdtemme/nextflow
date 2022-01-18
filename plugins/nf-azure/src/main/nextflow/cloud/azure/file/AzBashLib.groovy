@@ -48,15 +48,18 @@ class AzBashLib extends BashFunLib<AzBashLib> {
             local ret
             mkdir -p "$basedir"
         
+            echo "Downloading: $source" 
+
             ret=$(azcopy cp "$source?$AZ_SAS" "$target" 2>&1) || {
                 ## if fails check if it was trying to download a directory
                 mkdir -p $target
-                azcopy cp "$source/*?$AZ_SAS" "$target" --recursive >/dev/null || {
+                azcopy cp "$source?$AZ_SAS" "$target" --recursive || {
                     rm -rf $target
                     >&2 echo "Unable to download path: $source"
                     exit 1
                 }
             }
+            echo "Download of $source done" 
         }
         '''.stripIndent()
     }
