@@ -53,7 +53,7 @@ class AzBashLib extends BashFunLib<AzBashLib> {
             ret=$(azcopy cp "$source?$AZ_SAS" "$target" 2>&1) || {
                 ## if fails check if it was trying to download a directory
                 mkdir -p $target
-                azcopy cp "$source?$AZ_SAS" "$target" --recursive || {
+                azcopy cp "$source/*?$AZ_SAS" "$target" --recursive || {
                     rm -rf $target
                     >&2 echo "Unable to download path: $source"
                     exit 1
