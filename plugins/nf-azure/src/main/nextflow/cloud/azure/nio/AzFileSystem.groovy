@@ -15,9 +15,6 @@
  */
 package nextflow.cloud.azure.nio
 
-import com.azure.core.http.policy.HttpPipelinePolicy
-import org.codehaus.groovy.runtime.dgmimpl.arrays.IntegerArrayGetAtMetaMethod
-
 import java.nio.channels.Channels
 import java.nio.channels.SeekableByteChannel
 import java.nio.file.DirectoryNotEmptyException
@@ -374,7 +371,6 @@ class AzFileSystem extends FileSystem {
             int count=0
             while( values.hasNext() ) {
                 BlobItem blob = values.next()
-
                 if( blob.name == name )
                     exists = true
                 else if( blob.name.startsWith(name) && blob.name.charAt(name.length())==SLASH ) {
@@ -412,15 +408,16 @@ class AzFileSystem extends FileSystem {
 
     @PackageScope
     void copy(AzPath source, AzPath target) {
-
         final sasToken = provider.getSasToken()
         String sourceUrl = source.blobClient().getBlobUrl()
 
         if (sasToken != null) {
-            sourceUrl += "?${sasToken}"
+            if (sourceUrl.contains('?')){
+                sourceUrl = String.format("%s&%s", sourceUrl, sasToken);
+            } else {
+                sourceUrl = String.format("%s?%s", sourceUrl, sasToken);
+            }
         }
-
-        log.info "AzFileSystem.copy ${sourceUrl} -> ${target.blobClient().getBlobUrl()}"
 
         SyncPoller<BlobCopyInfo, Void> pollResponse =
                 target.blobClient().beginCopy( sourceUrl, null )
@@ -446,7 +443,7 @@ class AzFileSystem extends FileSystem {
 
     private AzFileAttributes readBlobAttrs0(AzPath path) {
         try {
-            AzFileAttributes attr =  new AzFileAttributes(path.blobClient())
+            return new AzFileAttributes(path.blobClient())
         }
         catch (BlobStorageException e) {
             if( e.statusCode != 404 )
@@ -499,5 +496,5 @@ class AzFileSystem extends FileSystem {
             return false
         }
     }
-
+    
 }

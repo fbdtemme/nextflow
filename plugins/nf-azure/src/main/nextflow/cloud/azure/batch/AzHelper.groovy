@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package nextflow.cloud.azure.batch
-
 import com.azure.storage.blob.BlobServiceClient
 import com.azure.storage.common.sas.AccountSasPermission
 import com.azure.storage.common.sas.AccountSasResourceType
@@ -96,13 +95,13 @@ class AzHelper {
             .setUpdatePermission(true)
 
     static AccountSasService ACCOUNT_SERVICES = new AccountSasService()
-        .setBlobAccess(true)
-        .setFileAccess(true)
+            .setBlobAccess(true)
+            .setFileAccess(true)
 
     static AccountSasResourceType ACCOUNT_RESOURCES = new AccountSasResourceType()
-        .setContainer(true)
-        .setObject(true)
-        .setService(true)
+            .setContainer(true)
+            .setObject(true)
+            .setService(true)
 
     static String generateSas(BlobContainerClient client, Duration duration) {
         final now = OffsetDateTime .now()
