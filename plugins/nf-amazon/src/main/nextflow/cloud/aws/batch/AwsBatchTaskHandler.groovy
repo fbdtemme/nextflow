@@ -17,8 +17,11 @@
 
 package nextflow.cloud.aws.batch
 
+import static AwsContainerOptionsMapper.*
+
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.regex.Pattern
 
 import com.amazonaws.services.batch.AWSBatch
 import com.amazonaws.services.batch.model.AWSBatchException
@@ -49,6 +52,7 @@ import groovy.transform.CompileStatic
 import groovy.util.logging.Slf4j
 import nextflow.cloud.types.CloudMachineInfo
 import nextflow.container.ContainerNameValidator
+import nextflow.exception.NodeTerminationException
 import nextflow.exception.ProcessSubmitException
 import nextflow.exception.ProcessUnrecoverableException
 import nextflow.executor.BashWrapperBuilder
@@ -62,15 +66,14 @@ import nextflow.processor.TaskRun
 import nextflow.processor.TaskStatus
 import nextflow.trace.TraceRecord
 import nextflow.util.CacheHelper
-
-import static AwsContainerOptionsMapper.createContainerOpts
-
 /**
  * Implements a task handler for AWS Batch jobs
  */
 // note: do not declare this class as `CompileStatic` otherwise the proxy is not get invoked
 @Slf4j
 class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,JobDetail> {
+
+    private static Pattern TERMINATED = ~/^Host EC2 .* terminated.*/
 
     private final Path exitFile
 
@@ -103,6 +106,8 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
     private CloudMachineInfo machineInfo
 
     private Map<String,String> environment
+
+    private boolean batchNativeRetry
 
     final static private Map<String,String> jobDefinitions = [:]
 
@@ -238,15 +243,23 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
         final job = describeJob(jobId)
         final done = job?.status in ['SUCCEEDED', 'FAILED']
         if( done ) {
-            // finalize the task
-            task.exitStatus = readExitFile()
-            task.stdout = outputFile
-            if( job?.status == 'FAILED' ) {
-                task.error = new ProcessUnrecoverableException(job?.getStatusReason())
-                task.stderr = executor.getJobOutputStream(jobId) ?: errorFile
+            if( !batchNativeRetry && TERMINATED.matcher(job.statusReason).find() ) {
+                // kee track of the node termination error
+                task.error = new NodeTerminationException(job.statusReason)
+                // mark the task as ABORTED since thr failure is caused by a node failure
+                task.aborted = true
             }
             else {
-                task.stderr = errorFile
+                // finalize the task
+                task.exitStatus = readExitFile()
+                task.stdout = outputFile
+                if( job?.status == 'FAILED' ) {
+                    task.error = new ProcessUnrecoverableException(job?.getStatusReason())
+                    task.stderr = executor.getJobOutputStream(jobId) ?: errorFile
+                }
+                else {
+                    task.stderr = errorFile
+                }
             }
             status = TaskStatus.COMPLETED
             return true
@@ -456,7 +469,7 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
 
         // create the container opts based on task config 
         final containerOpts = task.getConfig().getContainerOptionsMap()
-        final container = createContainerOpts(containerOpts)
+        final container = createContainerProperties(containerOpts)
 
         // container definition
         final _1_cpus = new ResourceRequirement().withType(ResourceType.VCPU).withValue('1')
@@ -492,10 +505,10 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
 
         // add to this list all values that has to contribute to the
         // job definition unique name creation
-        final tokens = [name, image, awscli, volumes, jobRole]
+        hashingTokens.add(name)
+        hashingTokens.add(container.toString())
         if( containerOpts )
-            tokens.add(containerOpts)
-        hashingTokens.addAll(tokens)
+            hashingTokens.add(containerOpts)
 
         return result
     }
@@ -575,6 +588,13 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
         if( !ContainerNameValidator.isValidImageName(name) ) throw new IllegalArgumentException("Invalid container image name: $name")
 
         def result = name.replaceAll(/[^a-zA-Z0-9\-_]+/,'-')
+        // Batch job definition length cannot exceed 128 characters
+        // take first 40 chars + add a unique MD5 hash (32 chars)
+        if( result.length()>125 ) {
+            final hash = name.md5()
+            result = result.substring(0,40) + '-' + hash
+        }
+
         return "nf-" + result
     }
 
@@ -608,11 +628,14 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
         // -- NOTE: make sure the `errorStrategy` is a static value before invoking `getMaxRetries` and `getErrorStrategy`
         //   when the errorStrategy is closure (ie. dynamic evaluated) value, the `task.config.getMaxRetries() && task.config.getErrorStrategy()`
         //   condition should not be evaluated because otherwise the closure value is cached using the wrong task.attempt and task.exitStatus values.
-        final strategy = task.config.getTarget().get('errorStrategy')
+        // -- use of `config.getRawValue('errorStrategy')` instead of `config.getErrorStrategy()` to prevent the resolution
+        //   of values dynamic values i.e. closures
+        final strategy = task.config.getRawValue('errorStrategy')
         final canCheck = strategy == null || strategy instanceof CharSequence
         if( canCheck && task.config.getMaxRetries() && task.config.getErrorStrategy() != ErrorStrategy.RETRY ) {
             def retry = new RetryStrategy().withAttempts( task.config.getMaxRetries()+1 )
             result.setRetryStrategy(retry)
+            this.batchNativeRetry = true
         }
 
         // set task timeout
@@ -758,7 +781,7 @@ class AwsBatchTaskHandler extends TaskHandler implements BatchHandler<String,Job
         catch (AWSBatchException e) {
             if( e.statusCode>=500 )
                 // raise a process exception so that nextflow can try to recover it
-                throw new ProcessSubmitException("Failed to register job defintion: ${req.jobDefinitionName} - Reason: ${e.errorCode}", e)
+                throw new ProcessSubmitException("Failed to register job definition: ${req.jobDefinitionName} - Reason: ${e.errorCode}", e)
             else
                 // status code < 500 are not expected to be recoverable, just throw it again
                 throw e

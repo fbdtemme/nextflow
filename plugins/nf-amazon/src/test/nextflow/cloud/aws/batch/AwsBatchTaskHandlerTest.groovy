@@ -36,6 +36,7 @@ import com.amazonaws.services.batch.model.SubmitJobResult
 import com.amazonaws.services.batch.model.TerminateJobRequest
 import nextflow.cloud.types.CloudMachineInfo
 import nextflow.cloud.types.PriceModel
+import nextflow.exception.NodeTerminationException
 import nextflow.exception.ProcessUnrecoverableException
 import nextflow.executor.Executor
 import nextflow.processor.BatchContext
@@ -309,6 +310,9 @@ class AwsBatchTaskHandlerTest extends Specification {
         handler.normalizeJobDefinitionName(null) == null
         handler.normalizeJobDefinitionName('foo') == 'nf-foo'
         handler.normalizeJobDefinitionName('foo:1') == 'nf-foo-1'
+        handler.normalizeJobDefinitionName('docker.io/foo/bar:1') == 'nf-docker-io-foo-bar-1'
+        and:
+        handler.normalizeJobDefinitionName('docker.io/some-container-very-long-name-123456789/123456789/123456789/123456789/123456789/123456789/123456789/123456789/123456789/123456789/name:123') == 'nf-docker-io-some-container-very-long-name--35e0fa487af0f525a8c14e7866449d8e'
 
         when:
         handler.normalizeJobDefinitionName('/some/file.img')
@@ -475,7 +479,7 @@ class AwsBatchTaskHandlerTest extends Specification {
         1 * handler.getAwsOptions() >> new AwsOptions()
         result.jobDefinitionName == JOB_NAME
         result.type == 'container'
-        result.parameters.'nf-token' == 'fdb5ef295f566138a43252b2ea272282'
+        result.parameters.'nf-token' == 'bfd3cc19ee9bdaea5b7edee94adf04bc'
         !result.containerProperties.mountPoints
 
         when:
@@ -485,7 +489,7 @@ class AwsBatchTaskHandlerTest extends Specification {
         1 * handler.getAwsOptions() >> new AwsOptions(cliPath: '/home/conda/bin/aws')
         result.jobDefinitionName == JOB_NAME
         result.type == 'container'
-        result.parameters.'nf-token' == '9c56fd073d32e0c29f51f12afdfe4750'
+        result.parameters.'nf-token' == '38d950a380585c53b43d733a10bae3b4'
         result.containerProperties.mountPoints[0].sourceVolume == 'aws-cli'
         result.containerProperties.mountPoints[0].containerPath == '/home/conda'
         result.containerProperties.mountPoints[0].readOnly
@@ -723,4 +727,29 @@ class AwsBatchTaskHandlerTest extends Specification {
         trace.machineInfo.priceModel == PriceModel.spot
     }
 
+    def 'should check spot termination' () {
+        given:
+        def JOB_ID = 'job-2'
+        def client = Mock(AWSBatch)
+        def task = new TaskRun()
+        def handler = Spy(AwsBatchTaskHandler)
+        handler.client = client
+        handler.jobId = JOB_ID
+        handler.task = task
+        and:
+        handler.isRunning() >> true
+        handler.describeJob(JOB_ID) >> Mock(JobDetail) {
+            getStatus() >> 'FAILED'
+            getStatusReason() >> "Host EC2 (instance i-0e2d5c2edc932b4e8) terminated."
+        }
+
+        when:
+        def done = handler.checkIfCompleted()
+        then:
+        task.aborted
+        task.error instanceof NodeTerminationException
+        and:
+        done == true
+
+    }
 }
