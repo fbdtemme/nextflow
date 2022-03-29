@@ -423,6 +423,7 @@ class AzBatchService implements Closeable {
         List<ImageInformation> images = apply(() -> client.accountOperations().listSupportedImages())
 
         for (ImageInformation it : images) {
+            log.debug "SKU: ${it.nodeAgentSKUId} publisher: ${it.imageReference().publisher()} ${it.imageReference().offer()}"
             if( !it.nodeAgentSKUId().equalsIgnoreCase(opts.sku) )
                 continue
             if( it.osType() != opts.osType )
