@@ -421,6 +421,7 @@ class AzBatchService implements Closeable {
 
     protected ImageInformation getImage(AzPoolOpts opts) {
         List<ImageInformation> images = apply(() -> client.accountOperations().listSupportedImages())
+        log.debug "Number of supported images: ${images.size()}"
 
         for (ImageInformation it : images) {
             log.debug "SKU: ${it.nodeAgentSKUId()} publisher: ${it.imageReference().publisher()} ${it.imageReference().offer()}"
