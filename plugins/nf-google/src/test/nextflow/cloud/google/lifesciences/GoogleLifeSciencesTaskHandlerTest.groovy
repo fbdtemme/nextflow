@@ -275,8 +275,8 @@ class GoogleLifeSciencesTaskHandlerTest extends GoogleSpecification {
         def handler = Spy(GoogleLifeSciencesTaskHandler)
         handler.executor = executor
         handler.task = task
-        handler.operation = operation
-        handler.helper = helper
+        handler.@operation = operation
+        handler.@helper = helper
 
         when:
         def result = handler.checkIfRunning()
@@ -320,7 +320,7 @@ class GoogleLifeSciencesTaskHandlerTest extends GoogleSpecification {
         def handler = Spy(GoogleLifeSciencesTaskHandler)
         handler.executor = executor
         handler.task = task
-        handler.helper = helper
+        handler.@helper = helper
 
         when:
         def isComplete = handler.checkIfCompleted()
@@ -426,9 +426,9 @@ class GoogleLifeSciencesTaskHandlerTest extends GoogleSpecification {
         and:
         def handler = Spy(GoogleLifeSciencesTaskHandler)
         handler.task = task
-        handler.pipelineId = 'xyz-123'
+        handler.@pipelineId = 'xyz-123'
         handler.executor = executor
-        handler.assignedZone = 'eu-east-1'
+        handler.@assignedZone = 'eu-east-1'
 
         when:
         def record = handler.getTraceRecord()

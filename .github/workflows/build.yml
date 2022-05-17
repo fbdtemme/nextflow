@@ -9,8 +9,8 @@ on:
     tags-ignore:
       - '*'
   pull_request:
-    branches:
-      - '*'
+    types: [opened, reopened, synchronize]
+
 jobs:
   build:
     name: Build Nextflow
@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java_version: [11, 17]
+        java_version: [11, 18]
 
     steps:
     - name: Environment
